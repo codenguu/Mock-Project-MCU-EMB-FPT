@@ -77,18 +77,18 @@ int main(void) {
 	if(GPIO_ReadPin(GPIOC, 3) == 0)
 	{
 		init_mode = BOOTLOADER_MODE;
-		__disable_irq();
+//		__disable_irq();
 		if(Check_APP_Valid(APPLICATION_ADDRESS))
 		{
 			//Erase flash before copy
 			Flash_Erase_nSector(FIRMWARE_BACKUP, FIRMWARE_BACKUP_END - 0x400);
 			//Copy old firmware to backup region
-			data_copy(APPLICATION_ADDRESS, FIRMWARE_BACKUP, *(uint32_t*)(FLASH_ADDRESS_END - 0x400));
+			data_copy(APPLICATION_ADDRESS, FIRMWARE_BACKUP, *(uint32_t*)(FLASH_ADDRESS_END - 4));
 		}
 		//Erase flash before into Boot mode
-		Flash_Erase_nSector(APPLICATION_ADDRESS, FLASH_ADDRESS_END - 1);
+		Flash_Erase_nSector(APPLICATION_ADDRESS, FLASH_ADDRESS_END - 0x800);
 		UART_SendString("Send SREC file:", 15);
-		__enable_irq();
+//		__enable_irq();
 	}
 
 	while(1)
@@ -111,6 +111,7 @@ int main(void) {
 				}
 				else if(status == SREC_STATUS_LOAD_ERR)
 				{
+
 					init_mode = DEFAULT_MODE;
 				}
 				break;
@@ -125,8 +126,13 @@ int main(void) {
 				else if(Check_APP_Valid(FIRMWARE_BACKUP))	//Check Firmware backup invalid
 				{
 					//Jump to Application
-					UART_SendString("Firmware backup Run!", 20);
-					Bootloader(FIRMWARE_BACKUP);
+					UART_SendString("Restore the old firmware!", 25);
+					//Erase flash before copy
+					Flash_Erase_nSector(APPLICATION_ADDRESS, FLASH_ADDRESS_END - 0x800);
+					//Copy old firmware to backup region
+					data_copy(FIRMWARE_BACKUP, APPLICATION_ADDRESS, *(uint32_t*)(FLASH_ADDRESS_END - 4));
+					//restore back up
+					Bootloader(APPLICATION_ADDRESS);
 				}
 				else
 				{
